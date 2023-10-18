@@ -10,9 +10,6 @@ namespace FrontendAdministracion.Models
         [Required(ErrorMessage = "El Nombre es obligatorio")]
         public string Nombre { get; set; }
 
-        [Required(ErrorMessage = "El Nombre de la empresa es obligatorio")]
-        public string NombreEmpresa { get; set; }
-
         [Required(ErrorMessage = "El Correo es obligatorio")]
         public string Correo { get; set; }
 

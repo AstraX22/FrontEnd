@@ -1,5 +1,67 @@
-﻿<h3>Agregar</h3>
+﻿@page "/cliente/agregar"
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+@inject ILocalStorageService _localStorageService
+
+<MudText Typo="Typo.h2" Class="ml">Cliente Nuevo</MudText>
+
+<MudGrid>
+    <MudItem xs="12" sm="7">
+        <MudPaper Class="pa-4">
+            <EditForm Model="cliente" OnValidSubmit="OnValidSubmit">
+                <MudCard>
+                    <MudCardContent>
+                        <MudTextField Label="Nombre" @bind-Value="cliente.Nombre" For="@(() => cliente.Nombre)" />
+                        <MudTextField Label="Apellido" @bind-Value="cliente.Apellido" For="@(() => cliente.Apellido)" />
+                        <MudTextField Label="Direccion" @bind-Value="cliente.Direccion" For="@(() => cliente.Direccion)" />
+                        <MudTextField Label="Correo" @bind-Value="cliente.Correo" For="@(() => cliente.Correo)" />
+                        <MudTextField Label="Teléfono" @bind-Value="cliente.Telefono" For="@(() => cliente.Telefono)" />
+                    </MudCardContent>
+                    <MudCardActions>
+                        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Guardar</MudButton>
+                    </MudCardActions>
+                </MudCard>
+            </EditForm>
+            @if (showLeaveAlert)
+            {
+                <MudAlert Severity="Severity.Error" ContentAlignment="HorizontalAlignment.Center" ShowCloseIcon="true" CloseIconClicked="(() => CloseMe(true))">No se pudo guardar.</MudAlert>
+            }
+        </MudPaper>
+    </MudItem>
+</MudGrid>
 
 @code {
+    private bool showLeaveAlert = false;
+    Cliente cliente = new Cliente(); // Cambio en el tipo de objeto
 
+    protected override async Task OnInitializedAsync()
+    {
+        Http.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await _localStorageService.GetItemAsync<string>("token"));
+    }
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        await save();
+    }
+
+    private async Task save()
+    {
+
+        var httpResponse = await Http.PostAsJsonAsync<Cliente>("cliente", cliente); // Cambio en el punto final
+
+        if (!(httpResponse.StatusCode == System.Net.HttpStatusCode.OK))
+        {
+            showLeaveAlert = true;
+        }
+        else
+        {
+            NavigationManager.NavigateTo("cliente/index"); // Cambio en la redirección
+        }
+    }
+
+    private void CloseMe(bool value)
+    {
+        showLeaveAlert = false;
+    }
 }

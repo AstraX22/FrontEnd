@@ -1,5 +1,78 @@
-﻿<h3>Editar</h3>
+﻿@page "/cliente/editar"
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+@inject ILocalStorageService _localStorageService
+
+<MudText Typo="Typo.h2" Class="ml">Cliente Nuevo</MudText>
+
+<MudGrid>
+    <MudItem xs="12" sm="7">
+        <MudPaper Class="pa-4">
+            <EditForm Model="cliente" OnValidSubmit="OnValidSubmit">
+                <MudCard>
+                    <MudCardContent>
+                        <MudTextField Label="Nombre" @bind-Value="cliente.Nombre" For="@(() => cliente.Nombre)" />
+                        <MudTextField Label="Apellido" @bind-Value="cliente.Apellido" For="@(() => cliente.Apellido)" />
+                        <MudTextField Label="Direccion" @bind-Value="cliente.Direccion" For="@(() => cliente.Direccion)" />
+                        <MudTextField Label="Correo" @bind-Value="cliente.Correo" For="@(() => cliente.Correo)" />
+                        <MudTextField Label="Teléfono" @bind-Value="cliente.Telefono" For="@(() => cliente.Telefono)" />
+                    </MudCardContent>
+                    <MudCardActions>
+                        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Guardar</MudButton>
+                    </MudCardActions>
+                </MudCard>
+            </EditForm>
+            @if (showLeaveAlert)
+            {
+                <MudAlert Severity="Severity.Error" ContentAlignment="HorizontalAlignment.Center" ShowCloseIcon="true" CloseIconClicked="(() => CloseMe(true))">No se pudo guardar.</MudAlert>
+            }
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
 
 @code {
+    private bool showLeaveAlert = false;
+    <!-- Variable para mostrar la alerta de error -->
+    Cliente cliente = new Cliente();
+    <!-- Instancia de la clase Proveedor para editar -->
+    [Parameter] public string id { get; set; }
+    <!-- Captura el ID del proveedor a editar desde la URL -->
+    protected override async Task OnInitializedAsync()
+    {
+        // Configuración de la autorización en las cabeceras de la solicitud HTTP
+        Http.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await _localStorageService.GetItemAsync<string>("token"));
 
+        // Obtener el proveedor a editar desde la API
+        cliente = await Http.GetFromJsonAsync<Cliente>($"cliente/{id}");
+    }
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        await save();
+    }
+
+    private async Task save()
+    {
+        // Envía una solicitud HTTP PUT para actualizar el cliente
+        var httpResponse = await Http.PutAsJsonAsync($"cliente/{id}", cliente);
+
+        if (!(httpResponse.StatusCode == System.Net.HttpStatusCode.OK))
+        {
+            showLeaveAlert = true;
+            <!-- Muestra la alerta de error si no se puede guardar -->
+        }
+        else
+        {
+            NavigationManager.NavigateTo("cliente/index");
+            <!-- Redirección después de guardar correctamente -->
+        }
+    }
+
+    private void CloseMe(bool value)
+    {
+        showLeaveAlert = false;
+        <!-- Cierra la alerta de error -->
+    }
 }
