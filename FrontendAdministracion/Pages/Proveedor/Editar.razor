@@ -1,5 +1,78 @@
-﻿<h3>Editar</h3>
+﻿@page "/proveedor/editar/{id}"
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+@inject ILocalStorageService _localStorageService
+
+<!-- Encabezado de la página -->
+<MudText Typo="Typo.h2" Class="ml">Editar Proveedor</MudText>
+
+<MudGrid>
+    <MudItem xs="12" sm="7">
+        <MudPaper Class="pa-4">
+            <!-- Formulario de edición -->
+            <EditForm Model="proveedor" OnValidSubmit="OnValidSubmit">
+                <DataAnnotationsValidator />
+                <MudCard>
+                    <MudCardContent>
+                        <!-- Campos de edición -->
+                        <MudTextField Label="Nombre" @bind-Value="proveedor.Nombre" For="@(() => proveedor.Nombre)" />
+                        <MudTextField Label="Nombre de la Empresa" @bind-Value="proveedor.NombreEmpresa" For="@(() => proveedor.NombreEmpresa)" />
+                        <MudTextField Label="Correo" @bind-Value="proveedor.Correo" For="@(() => proveedor.Correo)" />
+                        <MudTextField Label="Teléfono" @bind-Value="proveedor.Telefono" For="@(() => proveedor.Telefono)" />
+                    </MudCardContent>
+                    <MudCardActions>
+                        <!-- Botón de guardar -->
+                        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Guardar</MudButton>
+                    </MudCardActions>
+                </MudCard>
+            </EditForm>
+            <!-- Alerta de error si no se puede guardar -->
+            @if (showLeaveAlert)
+            {
+                <MudAlert Severity="Severity.Error" ContentAlignment="HorizontalAlignment.Center" ShowCloseIcon="true" CloseIconClicked="(() => CloseMe(true))">No se pudo guardar.</MudAlert>
+            }
+        </MudPaper>
+    </MudItem>
+</MudGrid>
 
 @code {
+    private bool showLeaveAlert = false; <!-- Variable para mostrar la alerta de error -->
+    Proveedor proveedor = new Proveedor(); <!-- Instancia de la clase Proveedor para editar -->
 
+    [Parameter] public string id { get; set; } <!-- Captura el ID del proveedor a editar desde la URL -->
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Configuración de la autorización en las cabeceras de la solicitud HTTP
+        Http.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await _localStorageService.GetItemAsync<string>("token"));
+
+        // Obtener el proveedor a editar desde la API
+        proveedor = await Http.GetFromJsonAsync<Proveedor>($"proveedor/{id}");
+    }
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        await save();
+    }
+
+    private async Task save()
+    {
+        // Envía una solicitud HTTP PUT para actualizar el proveedor
+        var httpResponse = await Http.PutAsJsonAsync($"proveedor/{id}", proveedor);
+
+        if (!(httpResponse.StatusCode == System.Net.HttpStatusCode.OK))
+        {
+            showLeaveAlert = true; <!-- Muestra la alerta de error si no se puede guardar -->
+        }
+        else
+        {
+            NavigationManager.NavigateTo("proveedor/index"); <!-- Redirección después de guardar correctamente -->
+        }
+    }
+
+    private void CloseMe(bool value)
+    {
+        showLeaveAlert = false; <!-- Cierra la alerta de error -->
+    }
 }

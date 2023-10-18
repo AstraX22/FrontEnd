@@ -1,5 +1,77 @@
-﻿<h3>Index</h3>
+﻿@page "/proveedor/index"
+@inject HttpClient httpClient
+@inject NavigationManager NavigationManager
+@inject ILocalStorageService _localStorageService
+
+<!-- Encabezado de la página -->
+<MudText Typo="Typo.h2" Class="ml">Proveedores</MudText>
+
+<!-- Barra de herramientas con botones de agregar y búsqueda -->
+<MudTable Items="@proveedores" Dense="true" Hover="true" Bordered="true" Striped="true">
+    <ToolBarContent>
+        <!-- Botón para agregar un nuevo proveedor -->
+        <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="goAdd" />
+        <MudSpacer />
+        <!-- Campo de búsqueda -->
+        <MudTextField @bind-Value="searchText" Placeholder="Buscar" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+    </ToolBarContent>
+
+    <!-- Encabezados de la tabla -->
+    <HeaderContent>
+        <MudTh>Id</MudTh>
+        <MudTh>Nombre</MudTh>
+        <MudTh>Nombre de la Empresa</MudTh>
+        <MudTh>Correo</MudTh>
+        <MudTh>Teléfono</MudTh>
+        <MudTh>Acciones</MudTh>
+    </HeaderContent>
+
+    <!-- Plantilla de fila para mostrar los datos de los proveedores -->
+    <RowTemplate>
+        <MudTd DataLabel="Id">@context.Id</MudTd>
+        <MudTd DataLabel="Nombre">@context.Nombre</MudTd>
+        <MudTd DataLabel="Nombre de la Empresa">@context.NombreEmpresa</MudTd>
+        <MudTd DataLabel="Correo">@context.Correo</MudTd>
+        <MudTd DataLabel="Teléfono">@context.Telefono</MudTd>
+        <MudTd>
+            <!-- Botones de editar y eliminar para cada proveedor -->
+            <MudButton Link="@($"/proveedor/editar/{context.Id}")" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Tertiary"
+                       Class="text-center">Editar</MudButton>
+            <MudButton Link="@($"/proveedor/eliminar/{context.Id}")" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Warning"
+                       Class="text-center">Eliminar</MudButton>
+        </MudTd>
+    </RowTemplate>
+
+    <!-- Paginación de la tabla -->
+    <PagerContent>
+        <MudTablePager />
+    </PagerContent>
+</MudTable>
 
 @code {
+    private IEnumerable<Proveedor> proveedores = new List<Proveedor>();
+    <!-- Lista de proveedores -->
+    private string searchText = "";
+    <!-- Variable para almacenar el texto de búsqueda -->
+    protected override async Task OnInitializedAsync()
+    {
+        httpClient.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await _localStorageService.GetItemAsync<string>("token"));
+        await getAll();
+        <!-- Llama a la función para obtener todos los proveedores -->
+    }
 
+    private async Task getAll()
+    {
+        var httpResponse = await httpClient.GetStringAsync("proveedor");
+        <!-- Hace una solicitud GET para obtener la lista de proveedores -->
+        proveedores = JsonSerializer.Deserialize<IEnumerable<Proveedor>>(httpResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        <!-- Deserializa la respuesta en una lista de proveedores -->
+    }
+
+    private void goAdd()
+    {
+        NavigationManager.NavigateTo("proveedor/agregar");
+        <!-- Navega a la página para agregar un nuevo proveedor -->
+    }
 }

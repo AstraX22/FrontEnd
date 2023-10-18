@@ -1,5 +1,55 @@
-﻿<h3>Eliminar</h3>
+﻿@page "/proveedor/eliminar/{id}" <!-- Ruta con parámetro de ID para identificar el proveedor -->
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+@inject ILocalStorageService _localStorageService
+
+<!-- Encabezado de la página -->
+<MudText Typo="Typo.h2" Class="ml">Eliminar Proveedor</MudText>
+
+<MudGrid>
+    <MudItem xs="12" sm="7">
+        <MudPaper Class="pa-4">
+            <MudCard>
+                <MudCardContent>
+                    <p>¿Estás seguro de que deseas eliminar este proveedor?</p>
+                </MudCardContent>
+                <MudCardActions>
+                    <!-- Botón de confirmación de eliminación -->
+                    <MudButton ButtonType="ButtonType.Button" Variant="Variant.Filled" Color="Color.Error" Class="ml-auto" @onclick="EliminarProveedor">Eliminar</MudButton>
+                </MudCardActions>
+            </MudCard>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
 
 @code {
+    Proveedor proveedor = new Proveedor(); <!-- Variable para almacenar el proveedor a eliminar -->
 
+    [Parameter] public string id { get; set; } <!-- Captura el ID del proveedor a eliminar desde la URL -->
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Configuración de la autorización en las cabeceras de la solicitud HTTP
+        Http.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await _localStorageService.GetItemAsync<string>("token"));
+
+        // Obtener el proveedor a eliminar desde la API
+        proveedor = await Http.GetFromJsonAsync<Proveedor>($"proveedor/{id}");
+    }
+
+    private async Task EliminarProveedor()
+    {
+        // Envía una solicitud HTTP DELETE para eliminar el proveedor
+        var httpResponse = await Http.DeleteAsync($"proveedor/{id}");
+
+        if (httpResponse.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo("proveedor/index"); <!-- Redirección después de eliminar correctamente -->
+        }
+        else
+        {
+            // Manejo de errores si la eliminación no fue exitosa
+            // Puedes mostrar un mensaje de error o realizar otras acciones según sea necesario
+        }
+    }
 }

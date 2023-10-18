@@ -1,5 +1,66 @@
-﻿<h3>Agregar</h3>
+﻿@page "/proveedor/agregar" 
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+@inject ILocalStorageService _localStorageService
+
+<MudText Typo="Typo.h2" Class="ml">Nuevo Proveedor</MudText>
+
+<MudGrid>
+    <MudItem xs="12" sm="7">
+        <MudPaper Class="pa-4">
+            <EditForm Model="proveedor" OnValidSubmit="OnValidSubmit">
+                <MudCard>
+                    <MudCardContent>
+                        <MudTextField Label="Nombre" @bind-Value="proveedor.Nombre" For="@(() => proveedor.Nombre)" />
+                        <MudTextField Label="Nombre de la Empresa" @bind-Value="proveedor.NombreEmpresa" For="@(() => proveedor.NombreEmpresa)" />
+                        <MudTextField Label="Correo" @bind-Value="proveedor.Correo" For="@(() => proveedor.Correo)" />
+                        <MudTextField Label="Teléfono" @bind-Value="proveedor.Telefono" For="@(() => proveedor.Telefono)" />
+                    </MudCardContent>
+                    <MudCardActions>
+                        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Guardar</MudButton>
+                    </MudCardActions>
+                </MudCard>
+            </EditForm>
+            @if (showLeaveAlert)
+            {
+                <MudAlert Severity="Severity.Error" ContentAlignment="HorizontalAlignment.Center" ShowCloseIcon="true" CloseIconClicked="(() => CloseMe(true))">No se pudo guardar.</MudAlert>
+            }
+        </MudPaper>
+    </MudItem>
+</MudGrid>
 
 @code {
+    private bool showLeaveAlert = false;
+    Proveedor proveedor = new Proveedor(); // Cambio en el tipo de objeto
 
+    protected override async Task OnInitializedAsync()
+    {
+        Http.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await _localStorageService.GetItemAsync<string>("token"));
+    }
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        await save();
+    }
+
+    private async Task save()
+    {
+
+        var httpResponse = await Http.PostAsJsonAsync<Proveedor>("proveedor", proveedor); // Cambio en el punto final
+
+        if (!(httpResponse.StatusCode == System.Net.HttpStatusCode.OK))
+        {
+            showLeaveAlert = true;
+        }
+        else
+        {
+            NavigationManager.NavigateTo("proveedor/index"); // Cambio en la redirección
+        }
+    }
+
+    private void CloseMe(bool value)
+    {
+        showLeaveAlert = false;
+    }
 }
