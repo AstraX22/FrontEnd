@@ -1,7 +1,32 @@
 ﻿@page "/home"
 
-<h1>Bienvenidos</h1>
+<center><h1>Bienvenidos</h1></center>
+
+<MudCarousel Class="mud-width-full" Style="height:300px;" ShowArrows="@arrows" ShowBullets="@bullets" EnableSwipeGesture="@enableSwipeGesture" AutoCycle="@autocycle" TData="object">
+    <MudCarouselItem Transition="transition">
+        <div class="d-flex" style="height:100%" Width="500">
+            <img src="/images/imagen 1 inicio.png" />
+        </div>
+    </MudCarouselItem>
+    <MudCarouselItem Transition="transition">
+        <div class="d-flex" style="height:100%" Width="200">
+            <img src="/images/Imagen1.jpg" Alt="inicio" Class="rounded-lg" />
+        </div>
+    </MudCarouselItem>
+    <MudCarouselItem Transition="transition">
+        <div class="d-flex" style="height:100%">
+            <img src="/images/Imagen1.jpg" />
+        </div>
+    </MudCarouselItem>
+</MudCarousel>
 
 @code {
-
+    private bool arrows = true;
+    private bool bullets = true;
+    private bool enableSwipeGesture = true;
+    private bool autocycle = true;
+    private Transition transition = Transition.Slide;
 }
+
+<img Fluid="true" src="/images/logoinicio.jpg" Alt="Swedish Farm House" Class="rounded-lg" ><img/>
+
