@@ -37,7 +37,7 @@
     {
         Http.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", await _localStorageService.GetItemAsync<string>("token"));
-        var resp = await Http.GetStringAsync("rol/" + id);
+        var resp = await Http.GetStringAsync("categoria/" + id);
         categoria = JsonSerializer.Deserialize<Categoria>(resp, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
     }
 

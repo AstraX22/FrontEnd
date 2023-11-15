@@ -36,7 +36,8 @@
     <!-- Variable para mostrar la alerta de error -->
     Cliente cliente = new Cliente();
     <!-- Instancia de la clase Proveedor para editar -->
-    [Parameter] public string id { get; set; }
+    [Parameter]
+    public int id { get; set; }
     <!-- Captura el ID del proveedor a editar desde la URL -->
     protected override async Task OnInitializedAsync()
     {
