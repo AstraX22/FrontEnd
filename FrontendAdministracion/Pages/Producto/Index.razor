@@ -1,91 +1,79 @@
-﻿@page "/producto/eliminar/{id:int}"
-@inject HttpClient Http
+﻿@page "/producto/index"
+@inject HttpClient httpClient
 @inject NavigationManager NavigationManager
 @inject ILocalStorageService _localStorageService
 
-<MudText Typo="Typo.h2" Class="ml">Eliminar Producto</MudText>
+<MudText Typo="Typo.h2" Class="ml">Productos</MudText>
 
-<MudGrid>
-    <MudItem xs="12" sm="7">
-        <MudPaper Class="pa-4">
-            <EditForm Model="producto" OnValidSubmit="OnValidSubmit">
-                <DataAnnotationsValidator />
-                <MudCard>
-                    <MudCardContent>
-                        <MudTextField Label="Codigo" @bind-Value="producto.Codigo" For="@(() => producto.Codigo)" Disabled />
-                         <MudTextField Label="Nombre" @bind-Value="producto.Nombre" For="@(() => producto.Nombre)" Disabled />
-                         <MudTextField Label="Precio" @bind-Value="producto.Precio" For="@(() => producto.Precio)" Disabled />
-                         <MudTextField Label="Descripcion" @bind-Value="producto.Descripcion" For="@(() => producto.Descripcion)" Disabled />
+<MudTable Items="@productos" Hover="true" Bordered="true" Striped="true">
+    <ToolBarContent>
+        <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="goAdd" />
+        <MudSpacer />
+        <MudTextField @bind-Value="searchText" OnKeyUp="enviar" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh>Id</MudTh>
+        <MudTh>Codigo</MudTh>
+        <MudTh>Nombre</MudTh>
+        <MudTh>Precio</MudTh>
+        <MudTh>Descripcion</MudTh>
+        <MudTh>Acciones</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Id">@context.Id</MudTd>
+        <MudTd DataLabel="Codigo">@context.Codigo</MudTd>
+        <MudTd DataLabel="Nombre">@context.Nombre</MudTd>
+        <MudTd DataLabel="Precio">@context.Precio</MudTd>
+        <MudTd DataLabel="Descripcion">@context.Descripcion</MudTd>
 
-                        <MudSelect Variant="Variant.Outlined" Label="Rol" AnchorOrigin="Origin.BottomCenter"
-                         @bind-Value="producto.IdCategoria" For="@(() => producto.IdCategoria)" Disabled>
-                            @foreach (var item in categorias)
-                            {
-                                <MudSelectItem Value="@item.Id">@item.Nombre</MudSelectItem>
-                            }
-                        </MudSelect>
-                    </MudCardContent>
-                    <MudCardActions>
-                        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Error" Class="ml-auto">Eliminar</MudButton>
-                    </MudCardActions>
-                </MudCard>
-            </EditForm>
-            @if (showLeaveAlert)
-            {
-                <MudAlert Severity="Severity.Error" ContentAlignment="HorizontalAlignment.Center" ShowCloseIcon="true" CloseIconClicked="(() => CloseMe(true))">No se pudo guardar.</MudAlert>
-            }
-        </MudPaper>
-    </MudItem>
-</MudGrid>
+        <MudTd>
+            <MudButton Link="@($"/producto/editar/{context.Id}")" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Tertiary"
+                       Class="text-center">Editar</MudButton>
+            <MudButton Link="@($"/producto/eliminar/{context.Id}")" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Warning"
+                       Class="text-center">Eliminar</MudButton>
+        </MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager />
+    </PagerContent>
+</MudTable>
 
 @code {
-    [Parameter]
-    public int id { get; set; }
-
-    private IEnumerable<Categoria>? categorias = new List<Categoria>();
-    private bool showLeaveAlert = false;
-    Producto? producto = new Producto();
+    private IEnumerable<Producto> productos = new List<Producto>();
+    private string searchText = "";
+    private Producto producto = new Producto();
 
     protected override async Task OnInitializedAsync()
     {
-        Http.DefaultRequestHeaders.Authorization =
+        httpClient.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", await _localStorageService.GetItemAsync<string>("token"));
-
-        var resp = await Http.GetStringAsync("producto/" + id);
-        producto = JsonSerializer.Deserialize<Producto>(resp, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-        await getCategorias();
+        await getAll();
     }
 
-    private async Task OnValidSubmit(EditContext context)
+    private async Task getAll()
     {
-        await saveChanges();
+        var httpResponse = await httpClient.PostAsJsonAsync("producto/buscar", producto);
+        string respString = await httpResponse.Content.ReadAsStringAsync();
+        productos = JsonSerializer.Deserialize<IEnumerable<Producto>>(respString, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
     }
 
-    private async Task saveChanges()
+    private void goAdd()
     {
-        var httpResponse = await Http.DeleteAsync("producto/" + producto.Id);
+        NavigationManager.NavigateTo("producto/agregar");
+    }
+    private async Task search()
+    {
+        var resp = await httpClient.PostAsJsonAsync<Producto>("producto/buscar", new Producto { Nombre = searchText });
+        string respString = await resp.Content.ReadAsStringAsync();
+        productos = JsonSerializer.Deserialize<IEnumerable<Producto>>(respString, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+    }
 
-        if (!(httpResponse.StatusCode == System.Net.HttpStatusCode.OK))
+    private void enviar(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
         {
-            showLeaveAlert = true;
+            search();
         }
-        else
-        {
-            NavigationManager.NavigateTo("producto/index");
-        }
-    }
-
-    private void CloseMe(bool value)
-    {
-        showLeaveAlert = false;
-    }
-
-    private async Task getCategorias()
-    {
-        var httpResponse = await Http.GetStringAsync("categoria");
-        categorias = JsonSerializer.Deserialize<IEnumerable<Categoria>>(httpResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
     }
 }
-
 

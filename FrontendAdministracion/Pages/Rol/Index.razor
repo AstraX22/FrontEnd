@@ -9,7 +9,7 @@
     <ToolBarContent>
         <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="goAdd" />
         <MudSpacer />
-        <MudTextField @bind-Value="searchText" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+        <MudTextField @bind-Value="searchText" OnKeyUp="enviar" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
     </ToolBarContent>
     <HeaderContent>
         <MudTh>Id</MudTh>
@@ -51,6 +51,21 @@
     private void goAdd()
     {
         NavigationManager.NavigateTo("rol/agregar");
+    }
+
+    private async Task search()
+    {
+        var resp = await httpClient.PostAsJsonAsync<Rol>("rol/buscar", new Rol { Nombre = searchText });
+        string respString = await resp.Content.ReadAsStringAsync();
+        roles = JsonSerializer.Deserialize<IEnumerable<Rol>>(respString, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+    }
+
+    private void enviar(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            search();
+        }
     }
 }
 

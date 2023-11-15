@@ -1,94 +1,86 @@
-﻿@page "/usuario/eliminar/{id:int}"
-@inject HttpClient Http
+﻿@page "/usuario/index"
+@inject HttpClient httpClient
 @inject NavigationManager NavigationManager
 @inject ILocalStorageService _localStorageService
 
-<MudText Typo="Typo.h2" Class="ml">Eliminar Usuario</MudText>
+<MudText Typo="Typo.h2" Class="ml">Usuarios</MudText>
 
-<MudGrid>
-    <MudItem xs="12" sm="7">
-        <MudPaper Class="pa-4">
-            <EditForm Model="usuario" OnValidSubmit="OnValidSubmit">
-                <DataAnnotationsValidator />
-                <MudCard>
-                    <MudCardContent>
-                        <MudTextField Label="Nombre" @bind-Value="usuario.Nombre" For="@(() => usuario.Nombre)" Disabled />
-                         <MudTextField Label="Apellido" @bind-Value="usuario.Apellido" For="@(() => usuario.Apellido)" Disabled />
-                         <MudTextField Label="Login" @bind-Value="usuario.Login" For="@(() => usuario.Login)" Disabled />
-                         <MudSelect Variant="Variant.Outlined" Label="Estado" AnchorOrigin="Origin.BottomCenter"
-                         @bind-Value="usuario.Estatus" For="@(() => usuario.Estatus)" Disabled>
-                            <MudSelectItem Value="1">Activo</MudSelectItem>
-                            <MudSelectItem Value="2">Inactivo</MudSelectItem>
-
-                        </MudSelect>
-                        <MudSelect Variant="Variant.Outlined" Label="Rol" AnchorOrigin="Origin.BottomCenter"
-                                   @bind-Value="usuario.IdRol" For="@(() => usuario.IdRol)" Disabled>
-                            @foreach (var item in roles)
-                            {
-                                <MudSelectItem Value="@item.Id">@item.Nombre</MudSelectItem>
-                            }
-                        </MudSelect>
-                    </MudCardContent>
-                    <MudCardActions>
-                        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Error" Class="ml-auto">Eliminar</MudButton>
-                    </MudCardActions>
-                </MudCard>
-            </EditForm>
-            @if (showLeaveAlert)
-            {
-                <MudAlert Severity="Severity.Error" ContentAlignment="HorizontalAlignment.Center" ShowCloseIcon="true" CloseIconClicked="(() => CloseMe(true))">No se pudo guardar.</MudAlert>
-            }
-        </MudPaper>
-    </MudItem>
-</MudGrid>
-
-@code {
-    [Parameter]
-    public int id { get; set; }
-
-    private IEnumerable<Rol>? roles = new List<Rol>();
-    private bool showLeaveAlert = false;
-    Usuario? usuario = new Usuario();
-
-    protected override async Task OnInitializedAsync()
-    {
-        Http.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", await _localStorageService.GetItemAsync<string>("token"));
-
-        var resp = await Http.GetStringAsync("usuario/" + id);
-        usuario = JsonSerializer.Deserialize<Usuario>(resp, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-        await getRoles();
-    }
-
-    private async Task OnValidSubmit(EditContext context)
-    {
-        await saveChanges();
-    }
-
-    private async Task saveChanges()
-    {
-        var httpResponse = await Http.DeleteAsync("usuario/" + usuario.Id);
-
-        if (!(httpResponse.StatusCode == System.Net.HttpStatusCode.OK))
+<MudTable Items="@usuarios" Hover="true" Bordered="true" Striped="true">
+    <ToolBarContent>
+        <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="goAdd" />
+        <MudSpacer />
+        <MudTextField @bind-Value="searchText" OnKeyUp="enviar" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh>Id</MudTh>
+        <MudTh>Nombre</MudTh>
+        <MudTh>Apellido</MudTh>
+        <MudTh>Login</MudTh>
+        <MudTh>Estado</MudTh>
+        <MudTh>Acciones</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Id">@context.Id</MudTd>
+        <MudTd DataLabel="Nombre">@context.Nombre</MudTd>
+        <MudTd DataLabel="Apellido">@context.Apellido</MudTd>
+        <MudTd DataLabel="Login">@context.Login</MudTd>
+        @if (context.Estatus == 1)
         {
-            showLeaveAlert = true;
+            <MudTd DataLabel="Estatus">Activo</MudTd>
         }
         else
         {
-            NavigationManager.NavigateTo("usuario/index");
+            <MudTd DataLabel="Estatus">Inactivo</MudTd>
+        }
+
+        <MudTd>
+            <MudButton Link="@($"/usuario/editar/{context.Id}")" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Tertiary"
+                       Class="text-center">Editar</MudButton>
+            <MudButton Link="@($"/usuario/eliminar/{context.Id}")" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Warning"
+                       Class="text-center">Eliminar</MudButton>
+        </MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager />
+    </PagerContent>
+</MudTable>
+
+@code {
+    private IEnumerable<Usuario> usuarios = new List<Usuario>();
+    private string searchText = "";
+    private Usuario usuario = new Usuario();
+
+    protected override async Task OnInitializedAsync()
+    {
+        httpClient.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await _localStorageService.GetItemAsync<string>("token"));
+        await getAll();
+    }
+
+    private async Task getAll()
+    {
+        var httpResponse = await httpClient.PostAsJsonAsync("usuario/buscar", usuario);
+        string respString = await httpResponse.Content.ReadAsStringAsync();
+        usuarios = JsonSerializer.Deserialize<IEnumerable<Usuario>>(respString, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+    }
+
+    private void goAdd()
+    {
+        NavigationManager.NavigateTo("usuario/agregar");
+    }
+
+    private async Task search()
+    {
+        var resp = await httpClient.PostAsJsonAsync<Usuario>("usuario/buscar", new Usuario { Nombre = searchText });
+        string respString = await resp.Content.ReadAsStringAsync();
+        usuarios = JsonSerializer.Deserialize<IEnumerable<Usuario>>(respString, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+    }
+
+    private void enviar(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            search();
         }
     }
-
-    private void CloseMe(bool value)
-    {
-        showLeaveAlert = false;
-    }
-
-    private async Task getRoles()
-    {
-        var httpResponse = await Http.GetStringAsync("rol");
-        roles = JsonSerializer.Deserialize<IEnumerable<Rol>>(httpResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-    }
 }
-
